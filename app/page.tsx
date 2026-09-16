@@ -286,9 +286,9 @@ function ModeToggle({
 }) {
   const base = compact
     ? "whitespace-nowrap px-2 py-1 text-[11px]"
-    : "flex-1 whitespace-nowrap px-3 py-1.5 text-xs";
+    : "whitespace-nowrap px-3 py-1.5 text-xs";
   return (
-    <div className="flex overflow-hidden rounded-md border border-zinc-300">
+    <div className="grid grid-cols-2 overflow-hidden rounded-md border border-zinc-300">
       <button
         type="button"
         onClick={() => onChange("transit")}
