@@ -6,6 +6,13 @@ import type { KakaoNamespace } from "@/lib/kakao-global";
 import type { Friend } from "@/lib/types";
 import type { CandidateResult } from "@/lib/types";
 
+// Kakao 예제 CDN의 기본 마커 이미지는 저해상도라 확대 시 흐릿해서, 벡터(SVG) 핀을
+// 직접 그려서 쓴다. 크기에 상관없이 항상 선명하다.
+function pinDataUri(color: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="${color}" stroke="#ffffff" stroke-width="2"/><circle cx="14" cy="14" r="6" fill="#ffffff"/></svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 export default function MapView({
   friends,
   ranked,
@@ -48,12 +55,9 @@ export default function MapView({
       const marker = new kakao.maps.Marker({
         position: pos,
         map,
-        image: new kakao.maps.MarkerImage(
-          f.mode === "car"
-            ? "https://t1.daumcdn.net/mapjsapi/images/marker.png"
-            : "https://t1.daumcdn.net/mapjsapi/images/marker.png",
-          new kakao.maps.Size(24, 35)
-        ),
+        image: new kakao.maps.MarkerImage(pinDataUri("#27272a"), new kakao.maps.Size(26, 35), {
+          offset: new kakao.maps.Point(13, 35),
+        }),
       });
       const label = new kakao.maps.CustomOverlay({
         position: pos,
@@ -71,14 +75,15 @@ export default function MapView({
       const pos = new kakao.maps.LatLng(r.candidate.lat, r.candidate.lng);
       const isBest = r.candidate.id === bestId;
       const isSelected = r.candidate.id === selectedId;
+      const size = isSelected ? 34 : 26;
+      const height = isSelected ? 46 : 35;
       const marker = new kakao.maps.Marker({
         position: pos,
         map,
         image: new kakao.maps.MarkerImage(
-          isBest
-            ? "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png"
-            : "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png",
-          new kakao.maps.Size(isSelected ? 32 : 26, isSelected ? 39 : 32)
+          pinDataUri(isBest ? "#dc2626" : "#2563eb"),
+          new kakao.maps.Size(size, height),
+          { offset: new kakao.maps.Point(size / 2, height) }
         ),
         zIndex: isBest ? 10 : 5,
       });
@@ -88,7 +93,7 @@ export default function MapView({
         position: pos,
         content: `<div style="padding:2px 6px;background:${
           isBest ? "#dc2626" : "#2563eb"
-        };color:#fff;font-size:11px;border-radius:4px;transform:translateY(-40px);white-space:nowrap;">${
+        };color:#fff;font-size:11px;border-radius:4px;transform:translateY(-${height + 6}px);white-space:nowrap;">${
           r.candidate.name
         }${r.maxMinutes ? ` · ${Math.round(r.maxMinutes)}분` : ""}</div>`,
         map,
