@@ -61,6 +61,49 @@ export async function searchCategoryNearby(
   }));
 }
 
+/**
+ * 좌표 주변에서 키워드로 장소 검색 (지하철역이 없는 지역에서 기차역/버스터미널 등을
+ * 찾을 때 사용 - 이런 곳들은 고정된 category_group_code가 없음).
+ */
+export async function searchKeywordNearby(
+  center: LatLng,
+  keyword: string,
+  radiusMeters: number,
+  size = 5
+): Promise<KakaoPlace[]> {
+  const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+  url.searchParams.set("query", keyword);
+  url.searchParams.set("x", String(center.lng));
+  url.searchParams.set("y", String(center.lat));
+  url.searchParams.set("radius", String(Math.min(Math.max(Math.round(radiusMeters), 1), 20000)));
+  url.searchParams.set("sort", "distance");
+  url.searchParams.set("size", String(Math.min(size, 15)));
+
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) {
+    throw new Error(`카카오 키워드 검색 실패: ${res.status}`);
+  }
+  const data = await res.json();
+  const documents: Array<{
+    id: string;
+    place_name: string;
+    address_name: string;
+    road_address_name?: string;
+    x: string;
+    y: string;
+    distance?: string;
+  }> = data.documents ?? [];
+
+  return documents.map((d) => ({
+    id: d.id,
+    name: d.place_name,
+    address: d.road_address_name || d.address_name,
+    lat: parseFloat(d.y),
+    lng: parseFloat(d.x),
+    distanceMeters: d.distance ? parseFloat(d.distance) : null,
+  }));
+}
+
 export interface AddressSearchResult {
   address: string;
   lat: number;
