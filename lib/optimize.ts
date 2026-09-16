@@ -14,8 +14,8 @@ async function buildCandidates(center: LatLng, radiusMeters: number): Promise<Ca
   const candidates: Candidate[] = [
     {
       id: "centroid",
-      name: "출발지들의 중심점",
-      address: "친구들 위치의 산술 평균 좌표",
+      name: "중심점",
+      address: "친구들 출발지의 산술 평균 좌표",
       lat: center.lat,
       lng: center.lng,
     },
