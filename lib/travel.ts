@@ -31,15 +31,17 @@ export async function resolveTravelTime(
         mode: origin.mode,
         minutes: durationSeconds / 60,
         estimated: false,
+        modeDetail: null,
       };
     }
-    const { totalTimeMinutes } = await getTransitDuration(originPoint, destination);
+    const { totalTimeMinutes, modeSummary } = await getTransitDuration(originPoint, destination);
     return {
       friendId: origin.id,
       label: origin.label,
       mode: origin.mode,
       minutes: totalTimeMinutes,
       estimated: false,
+      modeDetail: modeSummary,
     };
   } catch {
     return {
@@ -48,6 +50,7 @@ export async function resolveTravelTime(
       mode: origin.mode,
       minutes: estimateMinutes(originPoint, destination, origin.mode),
       estimated: true,
+      modeDetail: null,
     };
   }
 }

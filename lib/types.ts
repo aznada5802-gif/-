@@ -31,6 +31,7 @@ export interface TravelResult {
   mode: TravelMode;
   minutes: number | null;
   estimated: boolean;
+  modeDetail: string | null;
 }
 
 export interface CandidateResult {

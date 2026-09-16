@@ -4,10 +4,52 @@ const ODSAY_KEY = process.env.ODSAY_API_KEY;
 
 export interface TransitResult {
   totalTimeMinutes: number;
+  modeSummary: string | null;
+}
+
+const TRAIN_TYPE_LABEL: Record<number, string> = {
+  1: "KTX",
+  2: "새마을호",
+  3: "무궁화호",
+  4: "누리로",
+  6: "ITX-새마을",
+  7: "KTX-산천",
+  8: "ITX-청춘",
+};
+
+interface OdsaySubPath {
+  trafficType: number;
+  trainType?: number;
+}
+
+function legLabel(sub: OdsaySubPath): string | null {
+  switch (sub.trafficType) {
+    case 1:
+      return "지하철";
+    case 2:
+      return "버스";
+    case 4:
+      return sub.trainType ? (TRAIN_TYPE_LABEL[sub.trainType] ?? "기차") : "기차";
+    case 5:
+      return "항공기";
+    default:
+      return null; // 도보 등 이동수단이 아닌 구간은 요약에서 제외
+  }
+}
+
+function summarize(subPath: OdsaySubPath[]): string | null {
+  const labels: string[] = [];
+  for (const sub of subPath) {
+    const label = legLabel(sub);
+    if (label && labels[labels.length - 1] !== label) {
+      labels.push(label);
+    }
+  }
+  return labels.length ? labels.join(" → ") : null;
 }
 
 /**
- * ODsay 대중교통 길찾기 (지하철+버스 조합). 반환된 경로 중 최단 소요시간을 사용한다.
+ * ODsay 대중교통 길찾기 (지하철+버스+기차 조합). 반환된 경로 중 최단 소요시간을 사용한다.
  * https://lab.odsay.com
  */
 export async function getTransitDuration(
@@ -41,11 +83,15 @@ export async function getTransitDuration(
     throw new Error(`ODsay 경로 없음: ${message}`);
   }
 
-  const paths: Array<{ info: { totalTime: number } }> = data.result?.path ?? [];
+  const paths: Array<{ info: { totalTime: number }; subPath?: OdsaySubPath[] }> =
+    data.result?.path ?? [];
   if (paths.length === 0) {
     throw new Error("ODsay 대중교통 경로를 찾을 수 없습니다");
   }
 
-  const totalTimeMinutes = Math.min(...paths.map((p) => p.info.totalTime));
-  return { totalTimeMinutes };
+  const fastest = paths.reduce((best, p) => (p.info.totalTime < best.info.totalTime ? p : best));
+  return {
+    totalTimeMinutes: fastest.info.totalTime,
+    modeSummary: summarize(fastest.subPath ?? []),
+  };
 }

@@ -294,6 +294,9 @@ export default function Home() {
                       <td className="py-1.5 text-zinc-700">{r.label}</td>
                       <td className="py-1.5 text-zinc-500">
                         {r.mode === "car" ? "🚗 자차" : "🚌 대중교통"}
+                        {r.modeDetail && (
+                          <span className="ml-1 text-xs text-zinc-400">({r.modeDetail})</span>
+                        )}
                       </td>
                       <td className="py-1.5 text-right font-medium text-zinc-800">
                         {r.minutes !== null ? `${Math.round(r.minutes)}분` : "-"}
