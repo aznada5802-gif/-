@@ -16,6 +16,12 @@ const CONCURRENCY = 5;
 // 거점을 대신 후보로 찾는다.
 const LONG_DISTANCE_FALLBACK_KEYWORDS = ["기차역", "고속터미널", "시외버스터미널"];
 
+// 카카오 로컬 DB에는 폐역이 된 지하철역도 "지하철역" 카테고리에 그대로 남아있는
+// 경우가 있어, 이름에 폐역 표시가 붙은 곳은 후보에서 제외한다.
+function isClosedStation(name: string): boolean {
+  return /\(폐역\)|폐역$/.test(name);
+}
+
 function toCandidate(prefix: string, place: KakaoPlace): Candidate {
   return {
     id: `${prefix}-${place.id}`,
@@ -40,7 +46,8 @@ async function buildCandidates(center: LatLng, radiusMeters: number): Promise<Ca
 
   try {
     const stations = await searchCategoryNearby(center, SUBWAY_CATEGORY, radiusMeters, 15);
-    for (const s of stations.slice(0, MAX_STATION_CANDIDATES)) {
+    const openStations = stations.filter((s) => !isClosedStation(s.name));
+    for (const s of openStations.slice(0, MAX_STATION_CANDIDATES)) {
       seenPlaceIds.add(s.id);
       candidates.push(toCandidate("station", s));
     }
@@ -53,7 +60,7 @@ async function buildCandidates(center: LatLng, radiusMeters: number): Promise<Ca
       try {
         const places = await searchKeywordNearby(center, keyword, radiusMeters, 3);
         for (const p of places) {
-          if (seenPlaceIds.has(p.id)) continue;
+          if (seenPlaceIds.has(p.id) || isClosedStation(p.name)) continue;
           seenPlaceIds.add(p.id);
           candidates.push(toCandidate("hub", p));
         }
