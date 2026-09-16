@@ -213,8 +213,8 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex min-h-[400px] flex-col gap-4 lg:min-h-0">
-          <div className="h-[400px] overflow-hidden rounded-lg border border-zinc-200 lg:h-[55%]">
+        <div className="flex min-h-[400px] flex-col gap-4 lg:h-full lg:min-h-0">
+          <div className="h-[400px] min-h-0 overflow-hidden rounded-lg border border-zinc-200 lg:h-auto lg:flex-1">
             <MapView
               friends={friends}
               ranked={ranked}
@@ -284,7 +284,9 @@ function ModeToggle({
   onChange: (m: TravelMode) => void;
   compact?: boolean;
 }) {
-  const base = compact ? "px-2 py-1 text-[11px]" : "px-3 py-1.5 text-xs flex-1";
+  const base = compact
+    ? "whitespace-nowrap px-2 py-1 text-[11px]"
+    : "flex-1 whitespace-nowrap px-3 py-1.5 text-xs";
   return (
     <div className="flex overflow-hidden rounded-md border border-zinc-300">
       <button
