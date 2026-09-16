@@ -213,8 +213,8 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex min-h-[400px] flex-col gap-4 lg:h-full lg:min-h-0">
-          <div className="h-[400px] min-h-0 overflow-hidden rounded-lg border border-zinc-200 lg:h-auto lg:flex-1">
+        <div className="flex min-h-[400px] flex-col gap-4 lg:min-h-0">
+          <div className="h-[400px] max-h-[480px] min-h-0 overflow-hidden rounded-lg border border-zinc-200 lg:h-[480px]">
             <MapView
               friends={friends}
               ranked={ranked}
