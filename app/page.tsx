@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PlaceSearch, { type PlaceOption } from "@/components/PlaceSearch";
 import MapView from "@/components/MapView";
 import type { CandidateResult, Friend, TravelMode } from "@/lib/types";
@@ -11,6 +11,8 @@ function nextId() {
   return `friend-${idCounter}`;
 }
 
+type SortMode = "max" | "spread";
+
 export default function Home() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingPlace, setPendingPlace] = useState<PlaceOption | null>(null);
@@ -19,6 +21,7 @@ export default function Home() {
   const [searchResetKey, setSearchResetKey] = useState(0);
 
   const [ranked, setRanked] = useState<CandidateResult[]>([]);
+  const [sortMode, setSortMode] = useState<SortMode>("max");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +79,8 @@ export default function Home() {
         throw new Error(data.error ?? "요청 실패");
       }
       setRanked(data.ranked);
-      setSelectedId(data.ranked[0]?.candidate.id ?? null);
+      setSortMode("max");
+      setSelectedId(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "알 수 없는 오류");
     } finally {
@@ -84,8 +88,21 @@ export default function Home() {
     }
   }
 
-  const bestId = ranked[0]?.candidate.id ?? null;
-  const selectedResult = ranked.find((r) => r.candidate.id === selectedId) ?? null;
+  const displayRanked = useMemo(() => {
+    const key = sortMode === "max" ? "maxMinutes" : "spreadMinutes";
+    return [...ranked].sort((a, b) => {
+      const va = a[key];
+      const vb = b[key];
+      if (va === null) return 1;
+      if (vb === null) return -1;
+      return va - vb;
+    });
+  }, [ranked, sortMode]);
+
+  const bestId = displayRanked[0]?.candidate.id ?? null;
+  const effectiveSelectedId = selectedId ?? bestId;
+  const selectedResult =
+    displayRanked.find((r) => r.candidate.id === effectiveSelectedId) ?? null;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 sm:p-6">
@@ -180,17 +197,50 @@ export default function Home() {
             {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
           </section>
 
-          {ranked.length > 0 && (
+          {displayRanked.length > 0 && (
             <section className="rounded-lg border border-zinc-200 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold text-zinc-700">추천 장소 순위</h2>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold text-zinc-700">추천 장소 순위</h2>
+                <div className="grid grid-cols-2 overflow-hidden rounded-md border border-zinc-300 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortMode("max");
+                      setSelectedId(null);
+                    }}
+                    className={`whitespace-nowrap px-2 py-1 font-medium ${
+                      sortMode === "max" ? "bg-zinc-800 text-white" : "bg-white text-zinc-600"
+                    }`}
+                  >
+                    최대시간 최소화
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortMode("spread");
+                      setSelectedId(null);
+                    }}
+                    className={`whitespace-nowrap px-2 py-1 font-medium ${
+                      sortMode === "spread" ? "bg-zinc-800 text-white" : "bg-white text-zinc-600"
+                    }`}
+                  >
+                    편차 최소화
+                  </button>
+                </div>
+              </div>
+              <p className="mb-2 text-xs text-zinc-400">
+                {sortMode === "max"
+                  ? "가장 늦게 도착하는 사람의 시간이 가장 짧은 순서예요."
+                  : "친구들 간 도착 시간 차이가 가장 적은 순서예요."}
+              </p>
               <ul className="flex flex-col gap-2">
-                {ranked.map((r, i) => (
+                {displayRanked.map((r, i) => (
                   <li key={r.candidate.id}>
                     <button
                       type="button"
                       onClick={() => setSelectedId(r.candidate.id)}
                       className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${
-                        r.candidate.id === selectedId
+                        r.candidate.id === effectiveSelectedId
                           ? "border-blue-400 bg-blue-50"
                           : "border-zinc-100 hover:bg-zinc-50"
                       }`}
@@ -201,7 +251,8 @@ export default function Home() {
                           {r.candidate.name}
                         </span>
                         <span className="text-xs font-semibold text-zinc-600">
-                          최대 {r.maxMinutes !== null ? Math.round(r.maxMinutes) : "-"}분
+                          최대 {r.maxMinutes !== null ? Math.round(r.maxMinutes) : "-"}분 · 편차{" "}
+                          {r.spreadMinutes !== null ? Math.round(r.spreadMinutes) : "-"}분
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-zinc-400">{r.candidate.address}</p>
@@ -217,9 +268,9 @@ export default function Home() {
           <div className="h-[400px] max-h-[480px] min-h-0 overflow-hidden rounded-lg border border-zinc-200 lg:h-[480px]">
             <MapView
               friends={friends}
-              ranked={ranked}
+              ranked={displayRanked}
               bestId={bestId}
-              selectedId={selectedId}
+              selectedId={effectiveSelectedId}
               onSelectCandidate={setSelectedId}
             />
           </div>
