@@ -104,30 +104,6 @@ export async function searchKeywordNearby(
   }));
 }
 
-export interface AddressSearchResult {
-  address: string;
-  lat: number;
-  lng: number;
-}
-
-export async function searchAddress(query: string): Promise<AddressSearchResult[]> {
-  const url = new URL("https://dapi.kakao.com/v2/local/search/address.json");
-  url.searchParams.set("query", query);
-
-  const res = await fetch(url, { headers: authHeaders() });
-  if (!res.ok) {
-    throw new Error(`카카오 주소 검색 실패: ${res.status}`);
-  }
-  const data = await res.json();
-  const documents: Array<{ address_name: string; x: string; y: string }> =
-    data.documents ?? [];
-  return documents.map((d) => ({
-    address: d.address_name,
-    lat: parseFloat(d.y),
-    lng: parseFloat(d.x),
-  }));
-}
-
 export interface DrivingResult {
   durationSeconds: number;
   distanceMeters: number;
