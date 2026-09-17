@@ -64,6 +64,7 @@ export default function MapView({
         image: new kakao.maps.MarkerImage(pinDataUri("#27272a"), new kakao.maps.Size(26, 35), {
           offset: new kakao.maps.Point(13, 35),
         }),
+        zIndex: 1,
       });
       const label = new kakao.maps.CustomOverlay({
         position: pos,
@@ -71,6 +72,7 @@ export default function MapView({
           f.mode === "car" ? "자차" : "대중교통"
         })</div>`,
         map,
+        zIndex: 1,
       });
       markersRef.current.push(marker, label);
       bounds.extend(pos);
@@ -83,6 +85,7 @@ export default function MapView({
       const isSelected = r.candidate.id === selectedId;
       const size = isSelected ? 34 : 18;
       const height = isSelected ? 46 : 24;
+      const zIndex = isSelected ? 20 : isBest ? 10 : 5;
       const marker = new kakao.maps.Marker({
         position: pos,
         map,
@@ -91,7 +94,7 @@ export default function MapView({
           new kakao.maps.Size(size, height),
           { offset: new kakao.maps.Point(size / 2, height) }
         ),
-        zIndex: isBest ? 10 : 5,
+        zIndex,
       });
       kakao.maps.event.addListener(marker, "click", () => onSelectCandidate(r.candidate.id));
 
@@ -103,6 +106,7 @@ export default function MapView({
           r.candidate.name
         }${r.maxMinutes ? ` · ${Math.round(r.maxMinutes)}분` : ""}</div>`,
         map,
+        zIndex,
       });
 
       markersRef.current.push(marker, label);
