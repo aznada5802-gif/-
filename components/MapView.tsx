@@ -9,7 +9,7 @@ import type { CandidateResult } from "@/lib/types";
 // Kakao 예제 CDN의 기본 마커 이미지는 저해상도라 확대 시 흐릿해서, 벡터(SVG) 핀을
 // 직접 그려서 쓴다. 크기에 상관없이 항상 선명하다.
 function pinDataUri(color: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="${color}" stroke="#ffffff" stroke-width="2"/><circle cx="14" cy="14" r="6" fill="#ffffff"/></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="${color}"/><circle cx="14" cy="14" r="6" fill="#ffffff"/></svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
