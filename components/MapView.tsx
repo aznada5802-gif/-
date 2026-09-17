@@ -75,8 +75,8 @@ export default function MapView({
       const pos = new kakao.maps.LatLng(r.candidate.lat, r.candidate.lng);
       const isBest = r.candidate.id === bestId;
       const isSelected = r.candidate.id === selectedId;
-      const size = isSelected ? 34 : 26;
-      const height = isSelected ? 46 : 35;
+      const size = isSelected ? 34 : 18;
+      const height = isSelected ? 46 : 24;
       const marker = new kakao.maps.Marker({
         position: pos,
         map,
