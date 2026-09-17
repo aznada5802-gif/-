@@ -17,17 +17,27 @@ const TRAIN_TYPE_LABEL: Record<number, string> = {
   8: "ITX-청춘",
 };
 
+interface OdsayLane {
+  name?: string; // 지하철: 호선명 (예: "2호선")
+  busNo?: string; // 버스: 노선번호 (예: "140")
+}
+
 interface OdsaySubPath {
   trafficType: number;
   trainType?: number;
+  lane?: OdsayLane[];
 }
 
 function legLabel(sub: OdsaySubPath): string | null {
   switch (sub.trafficType) {
-    case 1:
-      return "지하철";
-    case 2:
-      return "버스";
+    case 1: {
+      const line = sub.lane?.[0]?.name;
+      return line ? `지하철 ${line}` : "지하철";
+    }
+    case 2: {
+      const busNo = sub.lane?.[0]?.busNo;
+      return busNo ? `버스 ${busNo}번` : "버스";
+    }
     case 4:
       return sub.trainType ? (TRAIN_TYPE_LABEL[sub.trainType] ?? "기차") : "기차";
     case 5:
