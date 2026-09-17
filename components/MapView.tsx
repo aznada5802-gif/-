@@ -30,6 +30,12 @@ export default function MapView({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoNamespace>(null);
   const markersRef = useRef<KakaoNamespace[]>([]);
+  // friends/ranked가 실제로 바뀐 경우에만 지도 범위를 다시 맞춘다 - 마커 선택(클릭)만으로는
+  // friends/ranked 참조가 그대로라 사용자가 확대/이동한 화면이 유지된다.
+  const lastFitDataRef = useRef<{ friends: Friend[] | null; ranked: CandidateResult[] | null }>({
+    friends: null,
+    ranked: null,
+  });
 
   useEffect(() => {
     if (!loaded || !containerRef.current || mapRef.current) return;
@@ -104,7 +110,11 @@ export default function MapView({
       hasPoint = true;
     });
 
-    if (hasPoint) {
+    const isNewData =
+      lastFitDataRef.current.friends !== friends || lastFitDataRef.current.ranked !== ranked;
+    lastFitDataRef.current = { friends, ranked };
+
+    if (hasPoint && isNewData) {
       map.setBounds(bounds);
     }
   }, [loaded, friends, ranked, bestId, selectedId, onSelectCandidate]);
