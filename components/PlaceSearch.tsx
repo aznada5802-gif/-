@@ -63,6 +63,7 @@ export default function PlaceSearch({
 }) {
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<PlaceOption[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const latestRequestId = useRef(0);
@@ -91,6 +92,7 @@ export default function PlaceSearch({
       if (requestId !== latestRequestId.current) return; // 더 최신 입력이 있으면 이 결과는 버림
       setSearching(false);
       setOptions(results);
+      setHighlightedIndex(results.length > 0 ? 0 : -1);
       if (results.length === 0) {
         setError("검색 결과가 없습니다");
       }
@@ -98,6 +100,34 @@ export default function PlaceSearch({
 
     return () => clearTimeout(timer);
   }, [trimmed, tooShort]);
+
+  function selectOption(opt: PlaceOption) {
+    onSelect(opt);
+    setOptions([]);
+    setHighlightedIndex(-1);
+    skipNextSearch.current = true;
+    setQuery(opt.name);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (tooShort || options.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((i) => (i + 1) % options.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((i) => (i - 1 + options.length) % options.length);
+    } else if (e.key === "Enter") {
+      if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+        e.preventDefault();
+        selectOption(options[highlightedIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setOptions([]);
+      setHighlightedIndex(-1);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-1">
@@ -108,6 +138,7 @@ export default function PlaceSearch({
           value={query}
           disabled={disabled}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
         {!tooShort && searching && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
@@ -122,13 +153,11 @@ export default function PlaceSearch({
             <li key={i}>
               <button
                 type="button"
-                onClick={() => {
-                  onSelect(opt);
-                  setOptions([]);
-                  skipNextSearch.current = true;
-                  setQuery(opt.name);
-                }}
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-50"
+                onClick={() => selectOption(opt)}
+                onMouseEnter={() => setHighlightedIndex(i)}
+                className={`block w-full px-3 py-2 text-left text-sm ${
+                  i === highlightedIndex ? "bg-zinc-100" : "hover:bg-zinc-50"
+                }`}
               >
                 <span className="font-medium">{opt.name}</span>
                 <span className="ml-2 text-xs text-zinc-500">{opt.address}</span>
