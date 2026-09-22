@@ -15,6 +15,7 @@ type SortMode = "max" | "spread";
 
 export default function Home() {
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingPlace, setPendingPlace] = useState<PlaceOption | null>(null);
   const [pendingLabel, setPendingLabel] = useState("");
   const [pendingMode, setPendingMode] = useState<TravelMode>("transit");
@@ -26,25 +27,65 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function addFriend() {
-    if (!pendingPlace) return;
-    const friend: Friend = {
-      id: nextId(),
-      label: pendingLabel.trim() || pendingPlace.name,
-      address: pendingPlace.address,
-      lat: pendingPlace.lat,
-      lng: pendingPlace.lng,
-      mode: pendingMode,
-    };
-    setFriends((prev) => [...prev, friend]);
+  function resetPendingForm() {
+    setEditingId(null);
     setPendingPlace(null);
     setPendingLabel("");
     setPendingMode("transit");
     setSearchResetKey((k) => k + 1);
   }
 
+  function submitFriend() {
+    if (!pendingPlace) return;
+    const label = pendingLabel.trim() || pendingPlace.name;
+
+    if (editingId) {
+      setFriends((prev) =>
+        prev.map((f) =>
+          f.id === editingId
+            ? {
+                ...f,
+                label,
+                address: pendingPlace.address,
+                lat: pendingPlace.lat,
+                lng: pendingPlace.lng,
+                mode: pendingMode,
+              }
+            : f
+        )
+      );
+    } else {
+      const friend: Friend = {
+        id: nextId(),
+        label,
+        address: pendingPlace.address,
+        lat: pendingPlace.lat,
+        lng: pendingPlace.lng,
+        mode: pendingMode,
+      };
+      setFriends((prev) => [...prev, friend]);
+    }
+    resetPendingForm();
+  }
+
+  function startEditFriend(friend: Friend) {
+    setEditingId(friend.id);
+    setPendingPlace({
+      name: friend.label,
+      address: friend.address,
+      lat: friend.lat,
+      lng: friend.lng,
+    });
+    setPendingLabel(friend.label);
+    setPendingMode(friend.mode);
+    setSearchResetKey((k) => k + 1);
+  }
+
   function removeFriend(id: string) {
     setFriends((prev) => prev.filter((f) => f.id !== id));
+    if (editingId === id) {
+      resetPendingForm();
+    }
   }
 
   function updateFriendMode(id: string, mode: TravelMode) {
@@ -121,7 +162,9 @@ export default function Home() {
       <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[380px_1fr]">
         <div className="flex flex-col gap-4">
           <section className="rounded-lg border border-zinc-200 bg-white p-4">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-700">친구 추가</h2>
+            <h2 className="mb-3 text-sm font-semibold text-zinc-700">
+              {editingId ? "친구 정보 수정" : "친구 추가"}
+            </h2>
             <div className="flex flex-col gap-2">
               <PlaceSearch key={searchResetKey} onSelect={setPendingPlace} />
               {pendingPlace && (
@@ -139,14 +182,25 @@ export default function Home() {
               <div className="flex gap-2">
                 <ModeToggle mode={pendingMode} onChange={setPendingMode} />
               </div>
-              <button
-                type="button"
-                onClick={addFriend}
-                disabled={!pendingPlace}
-                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-40"
-              >
-                친구로 추가
-              </button>
+              <div className="flex gap-2">
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={resetPendingForm}
+                    className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
+                  >
+                    취소
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={submitFriend}
+                  disabled={!pendingPlace}
+                  className="flex-1 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-40"
+                >
+                  {editingId ? "수정 완료" : "친구로 추가"}
+                </button>
+              </div>
             </div>
           </section>
 
@@ -161,7 +215,11 @@ export default function Home() {
                 {friends.map((f) => (
                   <li
                     key={f.id}
-                    className="flex items-center justify-between gap-2 rounded-md border border-zinc-100 px-3 py-2"
+                    className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 ${
+                      editingId === f.id
+                        ? "border-blue-300 bg-blue-50"
+                        : "border-zinc-100"
+                    }`}
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-zinc-800">{f.label}</p>
@@ -173,6 +231,13 @@ export default function Home() {
                         onChange={(m) => updateFriendMode(f.id, m)}
                         compact
                       />
+                      <button
+                        type="button"
+                        onClick={() => startEditFriend(f)}
+                        className="text-xs text-zinc-400 hover:text-blue-500"
+                      >
+                        수정
+                      </button>
                       <button
                         type="button"
                         onClick={() => removeFriend(f.id)}
